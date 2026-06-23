@@ -1,0 +1,201 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  nameAr      String?
+  type        String
+  permissions Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model Department {
+  id           String        @id @default(uuid())
+  name         String
+  nameAr       String
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  sections     Section[]
+  users        User[]
+  standards    Standard[]
+  requirements Requirement[]
+  documents    Document[]
+}
+
+model Section {
+  id           String        @id @default(uuid())
+  name         String
+  nameAr       String
+  departmentId String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  department   Department?   @relation(fields: [departmentId], references: [id])
+  users        User[]
+  standards    Standard[]
+  requirements Requirement[]
+}
+
+model User {
+  id                String         @id @default(uuid())
+  name              String
+  email             String         @unique
+  password          String?
+  image             String?
+  jobTitle          String?
+  phone             String?
+  status            String         @default("ACTIVE")
+  lastLoginAt       DateTime?
+  roleId            String
+  departmentId      String?
+  sectionId         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  role              Role           @relation(fields: [roleId], references: [id])
+  department        Department?    @relation(fields: [departmentId], references: [id])
+  section           Section?       @relation(fields: [sectionId], references: [id])
+  ownedStandards    Standard[]     @relation("StandardOwner")
+  backupStandards   Standard[]     @relation("StandardBackupOwner")
+  ownedRequirements Requirement[]  @relation("RequirementOwner")
+  uploadedDocuments Document[]     @relation("DocumentUploader")
+  approvedDocuments Document[]     @relation("DocumentApprover")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+}
+
+model Standard {
+  id             String         @id @default(uuid())
+  code           String         @unique
+  title          String
+  titleAr        String
+  description    String?
+  descriptionAr  String?
+  chapterCode    String
+  chapterTitle   String         @default("")
+  chapterTitleAr String
+  level          Int            @default(1)
+  orderIndex     Int            @default(0)
+  parentId       String?
+  ownerId        String?
+  backupOwnerId  String?
+  departmentId   String?
+  sectionId      String?
+  effectiveDate  DateTime?
+  reviewDate     DateTime?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  parent         Standard?      @relation("StandardChildren", fields: [parentId], references: [id])
+  children       Standard[]     @relation("StandardChildren")
+  owner          User?          @relation("StandardOwner", fields: [ownerId], references: [id])
+  backupOwner    User?          @relation("StandardBackupOwner", fields: [backupOwnerId], references: [id])
+  department     Department?    @relation(fields: [departmentId], references: [id])
+  section        Section?       @relation(fields: [sectionId], references: [id])
+  requirements   Requirement[]
+  documentLinks  DocumentLink[]
+}
+
+model Requirement {
+  id              String         @id @default(uuid())
+  code            String
+  title           String
+  titleAr         String?
+  description     String?
+  status          String         @default("NOT_STARTED")
+  priority        Int            @default(2)
+  orderIndex      Int            @default(0)
+  dueDate         DateTime?
+  completedAt     DateTime?
+  completionNotes String?
+  evidence        String?
+  standardId      String
+  ownerId         String?
+  departmentId    String?
+  sectionId       String?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  standard        Standard       @relation(fields: [standardId], references: [id])
+  owner           User?          @relation("RequirementOwner", fields: [ownerId], references: [id])
+  department      Department?    @relation(fields: [departmentId], references: [id])
+  section         Section?       @relation(fields: [sectionId], references: [id])
+  documentLinks   DocumentLink[]
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  title        String
+  titleAr      String?
+  type         String
+  status       String         @default("DRAFT")
+  version      String         @default("1.0")
+  description  String?
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String?
+  uploadedById String
+  departmentId String?
+  approvedAt   DateTime?
+  approvedById String?
+  reviewDate   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  uploadedBy   User           @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  approvedBy   User?          @relation("DocumentApprover", fields: [approvedById], references: [id])
+  department   Department?    @relation(fields: [departmentId], references: [id])
+  links        DocumentLink[]
+}
+
+model DocumentLink {
+  id            String       @id @default(uuid())
+  documentId    String
+  requirementId String?
+  standardId    String?
+  createdAt     DateTime     @default(now())
+  document      Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  requirement   Requirement? @relation(fields: [requirementId], references: [id])
+  standard      Standard?    @relation(fields: [standardId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  titleAr   String?
+  message   String
+  messageAr String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  link      String?
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  description String
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+}
