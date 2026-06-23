@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1100">
+<title>HMS Thumbnail</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1100px;
+    height: 675px;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    background: #0a0f1e;
+  }
+
+  /* ── BACKGROUND ── */
+  .canvas {
+    width: 1100px;
+    height: 675px;
+    position: relative;
+    background: linear-gradient(135deg, #0a0f1e 0%, #0d1530 40%, #0f1e3d 100%);
+    overflow: hidden;
+  }
+
+  /* Decorative blobs */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+  }
+  .blob-1 { width: 420px; height: 420px; background: #2563eb; top: -120px; left: -80px; }
+  .blob-2 { width: 320px; height: 320px; background: #7c3aed; bottom: -80px; right: 200px; }
+  .blob-3 { width: 240px; height: 240px; background: #0891b2; top: 200px; right: 50px; opacity: 0.12; }
+
+  /* Grid lines */
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ── LEFT COLUMN ── */
+  .left-col {
+    position: absolute;
+    left: 48px;
+    top: 50px;
+    width: 310px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(37,99,235,0.15);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 11px;
+    color: #60a5fa;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+    box-shadow: 0 0 6px #3b82f6;
+  }
+
+  .main-title {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .main-title span { color: #3b82f6; }
+
+  .subtitle {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+
+  /* Tech stack pills */
+  .stack-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 26px;
+  }
+  .pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 10.5px;
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+  .pill.blue  { background: rgba(37,99,235,0.18); border-color: rgba(59,130,246,0.3); color: #93c5fd; }
+  .pill.green { background: rgba(5,150,105,0.18); border-color: rgba(16,185,129,0.3); color: #6ee7b7; }
+  .pill.purple{ background: rgba(124,58,237,0.18); border-color: rgba(139,92,246,0.3); color: #c4b5fd; }
+  .pill.cyan  { background: rgba(8,145,178,0.18); border-color: rgba(6,182,212,0.3); color: #67e8f9; }
+
+  /* KPI mini cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .kpi-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .kpi-label { font-size: 10px; color: #64748b; font-weight: 500; margin-bottom: 4px; }
+  .kpi-value { font-size: 20px; font-weight: 800; color: #fff; }
+  .kpi-trend { font-size: 9.5px; margin-top: 3px; font-weight: 600; }
+  .trend-up   { color: #22c55e; }
+  .trend-down { color: #ef4444; }
+  .kpi-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    float: right;
+  }
+  .icon-blue   { background: rgba(59,130,246,0.18); }
+  .icon-green  { background: rgba(34,197,94,0.18); }
+  .icon-amber  { background: rgba(245,158,11,0.18); }
+  .icon-purple { background: rgba(168,85,247,0.18); }
+
+  /* Feature list */
+  .feature-list { display: flex; flex-direction: column; gap: 6px; }
+  .feature-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: #94a3b8;
+  }
+  .feature-check {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(34,197,94,0.2);
+    border: 1px solid rgba(34,197,94,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #22c55e; flex-shrink: 0;
+  }
+
+  /* ── DESKTOP MOCKUP ── */
+  .desktop-wrap {
+    position: absolute;
+    left: 390px;
+    top: 30px;
+    width: 480px;
+  }
+
+  .desktop-frame {
+    width: 480px;
+    background: #1a2238;
+    border-radius: 12px 12px 6px 6px;
+    border: 2px solid rgba(255,255,255,0.12);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 30px 80px rgba(0,0,0,0.6),
+      0 0 40px rgba(37,99,235,0.15);
+  }
+
+  /* Browser chrome */
+  .browser-bar {
+    background: #111827;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dot-row { display: flex; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #ef4444; }
+  .dot-y { background: #f59e0b; }
+  .dot-g { background: #22c55e; }
+  .url-bar {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 9px;
+    color: #64748b;
+    font-family: monospace;
+  }
+
+  /* App shell */
+  .app-shell {
+    display: flex;
+    height: 380px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 120px;
+    background: #0d1530;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 0;
+    flex-shrink: 0;
+  }
+  .side-logo {
+    padding: 0 12px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .logo-icon {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .logo-text { font-size: 9.5px; font-weight: 700; color: #fff; }
+
+  .nav-item {
+    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9.5px;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .nav-item.active {
+    background: rgba(37,99,235,0.15);
+    color: #60a5fa;
+    border-left: 2px solid #3b82f6;
+  }
+  .nav-icon { font-size: 11px; }
+
+  /* Main content */
+  .main-content {
+    flex: 1;
+    background: #0f172a;
+    overflow: hidden;
+    padding: 12px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .page-title { font-size: 12px; font-weight: 700; color: #fff; }
+  .header-btn {
+    background: #2563eb;
+    color: #fff;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 8.5px;
+    font-weight: 600;
+  }
+
+  /* KPIs row in desktop */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+  .d-kpi {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 8px;
+  }
+  .d-kpi-label { font-size: 7.5px; color: #475569; margin-bottom: 3px; }
+  .d-kpi-value { font-size: 14px; font-weight: 800; color: #fff; }
+  .d-kpi-trend { font-size: 7px; font-weight: 600; margin-top: 2px; }
+
+  /* Chart area */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 7px;
+    margin-bottom: 9px;
+  }
+  .chart-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 8px;
+  }
+  .chart-title { font-size: 8px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; }
+
+  /* Bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+  .bar { border-radius: 2px 2px 0 0; flex: 1; }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; gap: 8px; }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: #64748b; }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Table */
+  .table-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 8px;
+    overflow: hidden;
+  }
+  .table-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    padding: 4px 6px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    margin-bottom: 4px;
+  }
+  .th { font-size: 7px; color: #475569; font-weight: 600; text-transform: uppercase; }
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    padding: 5px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    align-items: center;
+  }
+  .td { font-size: 7.5px; color: #94a3b8; }
+  .td-name { font-weight: 600; color: #cbd5e1; font-size: 7.5px; }
+
+  /* Status badges */
+  .badge-comp { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 3px; padding: 1px 5px; font-size: 7px; font-weight: 600; display: inline-block; }
+  .badge-prog { background: rgba(59,130,246,0.15); color: #60a5fa; border-radius: 3px; padding: 1px 5px; font-size: 7px; font-weight: 600; display: inline-block; }
+  .badge-pend { background: rgba(245,158,11,0.15); color: #f59e0b; border-radius: 3px; padding: 1px 5px; font-size: 7px; font-weight: 600; display: inline-block; }
+
+  /* Progress bar mini */
+  .prog-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; }
+
+  /* Desktop stand */
+  .desktop-stand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stand-neck {
+    width: 60px; height: 14px;
+    background: linear-gradient(180deg, #1a2238, #111827);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .stand-base {
+    width: 120px; height: 8px;
+    background: linear-gradient(180deg, #1a2238, #111827);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0 0 4px 4px;
+  }
+
+  /* ── MOBILE MOCKUP ── */
+  .mobile-wrap {
+    position: absolute;
+    right: 28px;
+    top: 55px;
+  }
+
+  .mobile-frame {
+    width: 140px;
+    height: 285px;
+    background: #1a2238;
+    border-radius: 22px;
+    border: 2px solid rgba(255,255,255,0.14);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.5),
+      0 20px 50px rgba(0,0,0,0.6),
+      0 0 30px rgba(124,58,237,0.15);
+  }
+
+  /* Notch */
+  .m-notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 18px;
+    background: #0d1530;
+    border-radius: 0 0 14px 14px;
+    z-index: 10;
+  }
+
+  .m-status-bar {
+    background: #0d1530;
+    height: 20px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 10px 3px;
+    font-size: 7px;
+    color: #64748b;
+  }
+
+  .m-content {
+    background: #0f172a;
+    height: 265px;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  /* Mobile header */
+  .m-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .m-header-title { font-size: 10px; font-weight: 700; color: #fff; }
+  .m-avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    color: #fff; font-weight: 700;
+  }
+
+  /* Mobile KPIs */
+  .m-kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .m-kpi {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 7px;
+  }
+  .m-kpi-label { font-size: 7px; color: #475569; margin-bottom: 2px; }
+  .m-kpi-value { font-size: 13px; font-weight: 800; color: #fff; }
+  .m-kpi-sub { font-size: 7px; color: #22c55e; font-weight: 600; margin-top: 1px; }
+
+  /* Mobile chart placeholder */
+  .m-chart-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 7px;
+    margin-bottom: 7px;
+  }
+  .m-chart-title { font-size: 7.5px; color: #64748b; font-weight: 600; margin-bottom: 5px; }
+  .m-bars { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+  .m-bar { border-radius: 2px 2px 0 0; flex: 1; }
+
+  /* Mobile list */
+  .m-list { display: flex; flex-direction: column; gap: 4px; }
+  .m-list-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .m-list-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .m-list-text { font-size: 7.5px; color: #94a3b8; flex: 1; }
+  .m-list-badge { font-size: 6.5px; font-weight: 600; padding: 1px 4px; border-radius: 3px; }
+
+  /* ── BOTTOM RIBBON ── */
+  .bottom-ribbon {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 54px;
+    background: rgba(15,23,42,0.9);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 48px;
+    backdrop-filter: blur(10px);
+  }
+
+  .ribbon-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ribbon-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .ribbon-label { font-size: 10.5px; color: #64748b; }
+  .ribbon-value { font-size: 13px; font-weight: 700; color: #fff; }
+
+  .ribbon-divider {
+    width: 1px; height: 30px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* GitHub link */
+  .github-link {
+    position: absolute;
+    bottom: 62px;
+    left: 48px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 10px;
+    color: #94a3b8;
+  }
+  .github-link strong { color: #e2e8f0; }
+
+  /* Floating accent */
+  .accent-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2563eb, #7c3aed, #0891b2);
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <!-- Accent top line -->
+  <div class="accent-line"></div>
+
+  <!-- Background decorations -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- ── LEFT COLUMN ── -->
+  <div class="left-col">
+    <div class="badge"><div class="badge-dot"></div>Healthcare · Accreditation</div>
+
+    <div class="main-title">
+      Hospital<br>
+      <span>Standards</span><br>
+      Management
+    </div>
+
+    <div class="subtitle">
+      Production-ready accreditation platform with RBAC,<br>
+      real-time compliance tracking, and bilingual support.
+    </div>
+
+    <div class="stack-row">
+      <span class="pill blue">Next.js 16</span>
+      <span class="pill">TypeScript</span>
+      <span class="pill green">Prisma ORM</span>
+      <span class="pill purple">Auth.js v5</span>
+      <span class="pill cyan">Tailwind CSS</span>
+      <span class="pill">Recharts</span>
+      <span class="pill">i18n AR/EN</span>
+    </div>
+
+    <!-- KPI mini cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon icon-blue" style="float:right">📋</div>
+        <div class="kpi-label">Standards</div>
+        <div class="kpi-value">148</div>
+        <div class="kpi-trend trend-up">↑ 12 this month</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-green" style="float:right">✅</div>
+        <div class="kpi-label">Compliance</div>
+        <div class="kpi-value">87%</div>
+        <div class="kpi-trend trend-up">↑ 4.2% vs last</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-amber" style="float:right">⚠️</div>
+        <div class="kpi-label">Pending</div>
+        <div class="kpi-value">23</div>
+        <div class="kpi-trend trend-down">↓ 3 resolved</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon icon-purple" style="float:right">👥</div>
+        <div class="kpi-label">Active Users</div>
+        <div class="kpi-value">56</div>
+        <div class="kpi-trend trend-up">↑ 8 this week</div>
+      </div>
+    </div>
+
+    <!-- Feature list -->
+    <div class="feature-list">
+      <div class="feature-item"><div class="feature-check">✓</div> Role-Based Access Control (RBAC)</div>
+      <div class="feature-item"><div class="feature-check">✓</div> Document Repository + Version Control</div>
+      <div class="feature-item"><div class="feature-check">✓</div> Kanban Requirements + Audit Logs</div>
+    </div>
+  </div>
+
+  <!-- ── DESKTOP MOCKUP ── -->
+  <div class="desktop-wrap">
+    <div class="desktop-frame">
+      <!-- Browser bar -->
+      <div class="browser-bar">
+        <div class="dot-row">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="url-bar">localhost:3000/en/dashboard</div>
+      </div>
+
+      <!-- App shell -->
+      <div class="app-shell">
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="side-logo">
+            <div class="logo-icon">🏥</div>
+            <div class="logo-text">HMS</div>
+          </div>
+          <div class="nav-item active"><span class="nav-icon">📊</span>Dashboard</div>
+          <div class="nav-item"><span class="nav-icon">📋</span>Standards</div>
+          <div class="nav-item"><span class="nav-icon">✅</span>Requirements</div>
+          <div class="nav-item"><span class="nav-icon">📁</span>Documents</div>
+          <div class="nav-item"><span class="nav-icon">👥</span>Users</div>
+          <div class="nav-item"><span class="nav-icon">📈</span>Reports</div>
+          <div class="nav-item"><span class="nav-icon">🔔</span>Alerts</div>
+          <div class="nav-item"><span class="nav-icon">⚙️</span>Settings</div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Dashboard Overview</div>
+              <div style="font-size:8px;color:#475569;margin-top:1px">Monday, Jun 23 2026</div>
+            </div>
+            <div class="header-btn">+ New Standard</div>
+          </div>
+
+          <!-- KPI row -->
+          <div class="kpi-row">
+            <div class="d-kpi">
+              <div class="d-kpi-label">Total Standards</div>
+              <div class="d-kpi-value" style="color:#60a5fa">148</div>
+              <div class="d-kpi-trend trend-up">↑ 12 new</div>
+            </div>
+            <div class="d-kpi">
+              <div class="d-kpi-label">Compliance</div>
+              <div class="d-kpi-value" style="color:#22c55e">87%</div>
+              <div class="d-kpi-trend trend-up">↑ 4.2%</div>
+            </div>
+            <div class="d-kpi">
+              <div class="d-kpi-label">Pending</div>
+              <div class="d-kpi-value" style="color:#f59e0b">23</div>
+              <div class="d-kpi-trend trend-down">↓ 3 done</div>
+            </div>
+            <div class="d-kpi">
+              <div class="d-kpi-label">Documents</div>
+              <div class="d-kpi-value" style="color:#a78bfa">312</div>
+              <div class="d-kpi-trend trend-up">↑ 18 new</div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <div class="chart-title">Monthly Compliance Rate</div>
+              <div class="bar-chart">
+                <div class="bar" style="height:40%;background:rgba(59,130,246,0.4)"></div>
+                <div class="bar" style="height:52%;background:rgba(59,130,246,0.5)"></div>
+                <div class="bar" style="height:45%;background:rgba(59,130,246,0.4)"></div>
+                <div class="bar" style="height:60%;background:rgba(59,130,246,0.5)"></div>
+                <div class="bar" style="height:70%;background:rgba(59,130,246,0.6)"></div>
+                <div class="bar" style="height:65%;background:rgba(59,130,246,0.55)"></div>
+                <div class="bar" style="height:75%;background:rgba(59,130,246,0.65)"></div>
+                <div class="bar" style="height:80%;background:rgba(59,130,246,0.7)"></div>
+                <div class="bar" style="height:78%;background:rgba(59,130,246,0.65)"></div>
+                <div class="bar" style="height:87%;background:#3b82f6"></div>
+                <div class="bar" style="height:83%;background:rgba(59,130,246,0.75)"></div>
+                <div class="bar" style="height:90%;background:#60a5fa"></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">By Department</div>
+              <div class="donut-wrap">
+                <svg class="donut-svg" width="62" height="62" viewBox="0 0 62 62">
+                  <circle cx="31" cy="31" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>
+                  <circle cx="31" cy="31" r="22" fill="none" stroke="#3b82f6" stroke-width="10"
+                    stroke-dasharray="83 55" stroke-dashoffset="0" transform="rotate(-90 31 31)"/>
+                  <circle cx="31" cy="31" r="22" fill="none" stroke="#22c55e" stroke-width="10"
+                    stroke-dasharray="35 103" stroke-dashoffset="-83" transform="rotate(-90 31 31)"/>
+                  <circle cx="31" cy="31" r="22" fill="none" stroke="#f59e0b" stroke-width="10"
+                    stroke-dasharray="20 118" stroke-dashoffset="-118" transform="rotate(-90 31 31)"/>
+                  <text x="31" y="35" text-anchor="middle" font-size="10" font-weight="700" fill="white">87%</text>
+                </svg>
+                <div class="donut-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Clinical 60%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Admin 25%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Support 15%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="chart-title" style="margin-bottom:0">Recent Standards</span>
+              <span style="font-size:7.5px;color:#3b82f6;cursor:pointer">View all →</span>
+            </div>
+            <div class="table-header-row">
+              <div class="th">Standard Name</div>
+              <div class="th">Department</div>
+              <div class="th">Status</div>
+              <div class="th">Progress</div>
+            </div>
+            <div class="table-row">
+              <div class="td-name">Patient Safety Protocols</div>
+              <div class="td">Clinical</div>
+              <div class="td"><span class="badge-comp">Compliant</span></div>
+              <div class="td">
+                <div class="prog-bar"><div class="prog-fill" style="width:95%;background:#22c55e"></div></div>
+              </div>
+            </div>
+            <div class="table-row">
+              <div class="td-name">Infection Control Standards</div>
+              <div class="td">Clinical</div>
+              <div class="td"><span class="badge-prog">In Progress</span></div>
+              <div class="td">
+                <div class="prog-bar"><div class="prog-fill" style="width:72%;background:#3b82f6"></div></div>
+              </div>
+            </div>
+            <div class="table-row">
+              <div class="td-name">Medical Records Management</div>
+              <div class="td">Admin</div>
+              <div class="td"><span class="badge-pend">Pending</span></div>
+              <div class="td">
+                <div class="prog-bar"><div class="prog-fill" style="width:38%;background:#f59e0b"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stand -->
+    <div class="desktop-stand">
+      <div class="stand-neck"></div>
+      <div class="stand-base"></div>
+    </div>
+  </div>
+
+  <!-- ── MOBILE MOCKUP ── -->
+  <div class="mobile-wrap">
+    <div class="mobile-frame">
+      <div class="m-notch"></div>
+
+      <div class="m-status-bar">
+        <span>9:41</span>
+        <span>📶 🔋</span>
+      </div>
+
+      <div class="m-content">
+        <div class="m-header">
+          <div class="m-header-title">Dashboard</div>
+          <div class="m-avatar">A</div>
+        </div>
+
+        <div class="m-kpi-grid">
+          <div class="m-kpi">
+            <div class="m-kpi-label">Standards</div>
+            <div class="m-kpi-value" style="color:#60a5fa">148</div>
+            <div class="m-kpi-sub">↑ 12 new</div>
+          </div>
+          <div class="m-kpi">
+            <div class="m-kpi-label">Compliance</div>
+            <div class="m-kpi-value" style="color:#22c55e">87%</div>
+            <div class="m-kpi-sub">↑ 4.2%</div>
+          </div>
+        </div>
+
+        <div class="m-chart-card">
+          <div class="m-chart-title">Compliance Trend</div>
+          <div class="m-bars">
+            <div class="m-bar" style="height:45%;background:rgba(59,130,246,0.4)"></div>
+            <div class="m-bar" style="height:55%;background:rgba(59,130,246,0.5)"></div>
+            <div class="m-bar" style="height:62%;background:rgba(59,130,246,0.55)"></div>
+            <div class="m-bar" style="height:70%;background:rgba(59,130,246,0.6)"></div>
+            <div class="m-bar" style="height:75%;background:rgba(59,130,246,0.65)"></div>
+            <div class="m-bar" style="height:80%;background:rgba(59,130,246,0.7)"></div>
+            <div class="m-bar" style="height:85%;background:#3b82f6"></div>
+            <div class="m-bar" style="height:90%;background:#60a5fa"></div>
+          </div>
+        </div>
+
+        <div class="m-list">
+          <div class="m-list-item">
+            <div class="m-list-dot" style="background:#22c55e"></div>
+            <div class="m-list-text">Patient Safety Protocols</div>
+            <span class="m-list-badge" style="background:rgba(34,197,94,0.15);color:#22c55e">95%</span>
+          </div>
+          <div class="m-list-item">
+            <div class="m-list-dot" style="background:#3b82f6"></div>
+            <div class="m-list-text">Infection Control</div>
+            <span class="m-list-badge" style="background:rgba(59,130,246,0.15);color:#60a5fa">72%</span>
+          </div>
+          <div class="m-list-item">
+            <div class="m-list-dot" style="background:#f59e0b"></div>
+            <div class="m-list-text">Medical Records</div>
+            <span class="m-list-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">38%</span>
+          </div>
+          <div class="m-list-item">
+            <div class="m-list-dot" style="background:#a78bfa"></div>
+            <div class="m-list-text">Pharmacy Standards</div>
+            <span class="m-list-badge" style="background:rgba(168,85,247,0.15);color:#a78bfa">61%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub link -->
+  <div class="github-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    <strong>github.com/ahmed27698/hospital-sms</strong>
+  </div>
+
+  <!-- Bottom ribbon -->
+  <div class="bottom-ribbon">
+    <div class="ribbon-item">
+      <div class="ribbon-icon" style="background:rgba(59,130,246,0.15)">🗄️</div>
+      <div>
+        <div class="ribbon-label">Database</div>
+        <div class="ribbon-value" style="color:#60a5fa">PostgreSQL</div>
+      </div>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-item">
+      <div class="ribbon-icon" style="background:rgba(124,58,237,0.15)">🔐</div>
+      <div>
+        <div class="ribbon-label">Auth</div>
+        <div class="ribbon-value" style="color:#a78bfa">RBAC + JWT</div>
+      </div>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-item">
+      <div class="ribbon-icon" style="background:rgba(8,145,178,0.15)">🌍</div>
+      <div>
+        <div class="ribbon-label">Languages</div>
+        <div class="ribbon-value" style="color:#67e8f9">AR + EN</div>
+      </div>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-item">
+      <div class="ribbon-icon" style="background:rgba(34,197,94,0.15)">📱</div>
+      <div>
+        <div class="ribbon-label">Responsive</div>
+        <div class="ribbon-value" style="color:#4ade80">Mobile Ready</div>
+      </div>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-item">
+      <div class="ribbon-icon" style="background:rgba(245,158,11,0.15)">⚡</div>
+      <div>
+        <div class="ribbon-label">Stack</div>
+        <div class="ribbon-value" style="color:#fbbf24">Next.js 16</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
